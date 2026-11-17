@@ -15,6 +15,10 @@ elif db_url.startswith("postgresql://"):
 
 app.config["SQLALCHEMY_DATABASE_URI"] = db_url
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+    "pool_pre_ping": True,
+    "pool_recycle": 280,
+}
 
 db = SQLAlchemy(app)
 login_manager = LoginManager(app)
