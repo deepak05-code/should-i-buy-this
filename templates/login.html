@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | Should I Buy This?</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="bg-[#050811] text-slate-100 min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+
+    <div class="fixed top-[-12%] left-[-10%] w-[24rem] h-[24rem] bg-indigo-600/20 rounded-full blur-[120px] pointer-events-none"></div>
+    <div class="fixed bottom-[-12%] right-[-10%] w-[24rem] h-[24rem] bg-purple-600/15 rounded-full blur-[120px] pointer-events-none"></div>
+
+    <div class="max-w-md w-full glass border border-slate-800 rounded-3xl p-7 shadow-2xl relative z-10">
+        <div class="text-center mb-6">
+            <a href="/" class="text-xs font-bold text-indigo-400 hover:text-indigo-300">← Back to Calculator</a>
+            <h1 class="text-3xl font-extrabold text-white mt-2">Wallet Vault 🔐</h1>
+            <p class="text-slate-400 text-xs mt-1">Sign in to track how much impulse money you've saved.</p>
+        </div>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="mb-4 p-3 rounded-2xl bg-rose-500/20 border border-rose-500/40 text-rose-300 text-xs font-bold text-center">
+                    {{ messages[0] }}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <form method="POST" action="/login" class="space-y-4">
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">Username</label>
+                <input name="username" type="text" required placeholder="e.g., Alex"
+                    class="w-full bg-slate-950/90 border border-slate-800 rounded-2xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500">
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">Password</label>
+                <input name="password" type="password" required placeholder="••••••••"
+                    class="w-full bg-slate-950/90 border border-slate-800 rounded-2xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500">
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 pt-2">
+                <button type="submit" name="action" value="login"
+                    class="bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold py-3 px-4 rounded-2xl shadow-lg shadow-indigo-600/30 transition text-sm">
+                    Sign In
+                </button>
+                <button type="submit" name="action" value="register"
+                    class="bg-slate-900 hover:bg-slate-800 text-emerald-400 border border-emerald-500/30 font-extrabold py-3 px-4 rounded-2xl transition text-sm">
+                    Create Account
+                </button>
+            </div>
+        </form>
+    </div>
+</body>
+</html>

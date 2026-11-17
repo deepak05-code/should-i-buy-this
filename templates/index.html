@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Should I Buy This? | Python Flask Reality Check</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="bg-[#050811] text-slate-100 min-h-screen relative overflow-x-hidden selection:bg-indigo-500 selection:text-white">
+
+    <!-- Ambient Background Glows -->
+    <div class="fixed top-[-12%] left-[-10%] w-[28rem] h-[28rem] bg-indigo-600/20 rounded-full blur-[130px] pointer-events-none"></div>
+    <div class="fixed bottom-[-12%] right-[-10%] w-[28rem] h-[28rem] bg-purple-600/15 rounded-full blur-[130px] pointer-events-none"></div>
+
+    <div class="max-w-5xl mx-auto px-4 py-10 relative z-10">
+            <!-- Top User Account Bar -->
+        <nav class="flex items-center justify-between bg-slate-900/80 border border-slate-800/90 rounded-2xl px-4 py-2.5 mb-8">
+            {% if current_user.is_authenticated %}
+                <div class="flex items-center gap-2 text-xs">
+                    <span class="text-slate-400">Hi, <strong class="text-white">{{ current_user.username }}</strong> 👋</span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span class="bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-extrabold px-3 py-1 rounded-xl">
+                        🛡️ Saved: ₹<span id="navTotalSaved">{{ "{:,.0f}".format(current_user.total_saved) }}</span>
+                    </span>
+                    <a href="/logout" class="text-xs font-bold text-slate-400 hover:text-rose-400 transition">Logout</a>
+                </div>
+            {% else %}
+                <span class="text-xs text-slate-400">Guest Mode</span>
+                <a href="/login" class="text-xs font-extrabold bg-indigo-600 hover:bg-indigo-500 text-white px-3.5 py-1.5 rounded-xl transition">
+                    🔐 Login to Track Savings
+                </a>
+            {% endif %}
+        </nav>
+
+
+        <!-- Header -->
+        <header class="text-center mb-10">
+            <div class="inline-flex items-center gap-2 py-1.5 px-4 rounded-full bg-blue-500/10 border border-blue-500/25 text-white-300 text-xs font-bold uppercase tracking-widest mb-4">
+                <span class="w-2 h-2 rounded-full bg-blue-400 animate-ping"></span>
+                Anti-broke Reality Check
+            </div>
+            <h1 class="text-4xl md:text-6xl font-extrabold tracking-tight bg-gradient-to-r from-white via-indigo-100 to-indigo-400 bg-clip-text text-transparent pb-1">
+                Should I Buy This? 🛒
+            </h1>
+            <p class="text-slate-400 mt-3 text-base md:text-lg max-w-2xl mx-auto">
+                Step away from the <span class="text-white font-semibold">"Buy Now"</span> button. Let's see how many <span class="text-indigo-400 font-semibold">hours of your life</span> (and plates of <span class="text-amber-400 font-semibold">Masala Dosa</span>) this shiny mistake actually costs.
+            </p>
+        </header>
+
+        <!-- Main Calculator Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+
+            <!-- Left Column: Input Form -->
+            <div class="lg:col-span-5 glass border border-slate-800/90 rounded-3xl p-6 md:p-7 shadow-2xl">
+
+                <!-- Mode Switcher Tabs -->
+                <div class="grid grid-cols-2 gap-1.5 bg-slate-950 p-1.5 rounded-2xl border border-slate-800 mb-6">
+                    <button type="button" id="tabSalary" onclick="switchMode('salary')"
+                        class="py-2.5 px-3 rounded-xl text-xs font-extrabold uppercase tracking-wider transition bg-indigo-600 text-white shadow-lg shadow-indigo-600/25">
+                        💼 Monthly Salary
+                    </button>
+                    <button type="button" id="tabWallet" onclick="switchMode('wallet')"
+                        class="py-2.5 px-3 rounded-xl text-xs font-extrabold uppercase tracking-wider transition text-slate-400 hover:text-white">
+                        👛 Wallet / Pocket
+                    </button>
+                </div>
+
+                <!-- Quick Presets -->
+                <div class="mb-5">
+                    <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400 block mb-2">⚡ 1-Click Presets (Fill Only):</span>
+                    <div class="flex flex-wrap gap-1.5">
+                        <button type="button" onclick="applyPreset('Late Night Zomato Binge', 680)" class="text-xs bg-slate-900/90 hover:bg-indigo-950/80 text-slate-300 hover:text-indigo-300 border border-slate-800 hover:border-indigo-500/40 rounded-xl px-3 py-1.5 transition">🍕 Zomato (₹680)</button>
+                        <button type="button" onclick="applyPreset('Fresh Sneakers', 4500)" class="text-xs bg-slate-900/90 hover:bg-indigo-950/80 text-slate-300 hover:text-indigo-300 border border-slate-800 hover:border-indigo-500/40 rounded-xl px-3 py-1.5 transition">👟 Sneakers (₹4.5k)</button>
+                        <button type="button" onclick="applyPreset('Sony ANC Headphones', 19990)" class="text-xs bg-slate-900/90 hover:bg-indigo-950/80 text-slate-300 hover:text-indigo-300 border border-slate-800 hover:border-indigo-500/40 rounded-xl px-3 py-1.5 transition">🎧 Sony XM4 (₹20k)</button>
+                        <button type="button" onclick="applyPreset('PlayStation 5 Disc', 54990)" class="text-xs bg-slate-900/90 hover:bg-indigo-950/80 text-slate-300 hover:text-indigo-300 border border-slate-800 hover:border-indigo-500/40 rounded-xl px-3 py-1.5 transition">🎮 PS5 (₹55k)</button>
+                    </div>
+                </div>
+
+                <form id="calcForm" onsubmit="handleFormSubmit(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">Item Name</label>
+                        <input id="item_name" type="text" placeholder="e.g., Fresh Sneakers, Watch..."
+                            class="w-full bg-slate-950/90 border border-slate-800 rounded-2xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">Item Price (₹) *</label>
+                        <input id="item_price" type="number" step="any" min="1" required placeholder="e.g., 1500"
+                            class="w-full bg-slate-950/90 border border-slate-800 rounded-2xl px-4 py-3 text-white font-extrabold text-xl placeholder-slate-600 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition">
+                    </div>
+
+                    <!-- Salary Inputs -->
+                    <div id="salaryInputs" class="space-y-4 pt-3 border-t border-slate-800/80">
+                        <div>
+                            <div class="flex justify-between items-center mb-1.5">
+                                <label class="text-xs font-bold uppercase tracking-wider text-slate-400">Monthly Take-Home Pay (₹)</label>
+                                <span id="incomeLabel" class="text-xs font-bold text-indigo-400">₹50,000</span>
+                            </div>
+                            <input id="monthly_income" type="number" step="any" min="500" value="50000" oninput="syncSlider(this.value)"
+                                class="w-full bg-slate-950/90 border border-slate-800 rounded-xl px-4 py-2.5 text-white font-semibold mb-2 focus:outline-none focus:border-indigo-500 transition">
+                            <input id="income_slider" type="range" min="5000" max="300000" step="5000" value="50000" oninput="syncInput(this.value)"
+                                class="w-full accent-indigo-500 cursor-pointer h-1.5 bg-slate-800 rounded-lg">
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">Hours / Day</label>
+                                <input id="hours_per_day" type="number" step="any" min="1" max="24" value="8"
+                                    class="w-full bg-slate-950/90 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-indigo-500 transition">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">Days / Week</label>
+                                <input id="days_per_week" type="number" step="any" min="1" max="7" value="5"
+                                    class="w-full bg-slate-950/90 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-indigo-500 transition">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Wallet Inputs -->
+                    <div id="walletInputs" class="hidden space-y-4 pt-3 border-t border-slate-800/80">
+                        <div>
+                            <div class="flex justify-between items-center mb-1.5">
+                                <label class="text-xs font-bold uppercase tracking-wider text-slate-400">Current Wallet / Bank Balance (₹)</label>
+                                <span id="walletLabel" class="text-xs font-bold text-purple-400">₹5,000</span>
+                            </div>
+                            <input id="wallet_balance" type="number" step="any" min="1" value="5000" oninput="syncWalletSlider(this.value)"
+                                class="w-full bg-slate-950/90 border border-slate-800 rounded-xl px-4 py-2.5 text-white font-semibold mb-2 focus:outline-none focus:border-purple-500 transition">
+                            <input id="wallet_slider" type="range" min="500" max="50000" step="500" value="5000" oninput="syncWalletInput(this.value)"
+                                class="w-full accent-purple-500 cursor-pointer h-1.5 bg-slate-800 rounded-lg">
+                        </div>
+
+                        <div>
+                            <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">
+                                Daily Survival Spend (Food, Travel, Chai) (₹)
+                            </label>
+                            <input id="daily_spend" type="number" step="any" min="10" value="200"
+                                class="w-full bg-slate-950/90 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-purple-500 transition">
+                            <p class="text-[11px] text-slate-500 mt-1">Used to calculate how many days of survival this item costs you.</p>
+                        </div>
+                    </div>
+
+                    <button id="submitBtn" type="submit"
+                        class="w-full bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold py-3.5 px-6 rounded-2xl shadow-lg shadow-indigo-600/30 transform hover:-translate-y-0.5 transition duration-200 text-base mt-2">
+                        Give Me A Reality Check ⚡
+                    </button>
+                </form>
+            </div>
+
+            <!-- Right Column: Results -->
+            <div class="lg:col-span-7">
+
+                <!-- Empty State Placeholder -->
+                <div id="emptyState" class="glass border border-dashed border-slate-800 rounded-3xl p-12 text-center flex flex-col items-center justify-center min-h-[420px]">
+                    <div class="text-6xl mb-4 float-anim">🧘‍♂️</div>
+                    <h3 class="text-2xl font-extrabold text-white mb-2">Ready for Your Reality Check?</h3>
+                    <p class="text-slate-400 max-w-md text-sm md:text-base leading-relaxed">
+                        Choose <span class="text-indigo-400 font-bold">Monthly Salary</span> or <span class="text-purple-400 font-bold">Wallet Mode</span> on the left, enter the price, and click <span class="text-white font-bold">"Give Me A Reality Check ⚡"</span>.
+                    </p>
+                </div>
+
+                <!-- Live Flask Results Container -->
+                <div id="resultsContainer" class="hidden space-y-6">
+
+                    <!-- Dynamic Verdict Banner -->
+                    <div id="verdictCard" class="glass border-2 border-amber-500/40 rounded-3xl p-6 md:p-7 shadow-2xl transition-all duration-300">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                            <div>
+                                <span id="verdictBadge" class="inline-block px-3.5 py-1 rounded-full text-xs font-extrabold uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/30 mb-2">
+                                    Sleep On It 🟡
+                                </span>
+                                <h2 class="text-2xl md:text-3xl font-extrabold text-white">
+                                    <span id="resItemName">Item</span>
+                                    <span class="text-indigo-400 font-bold">(₹<span id="resItemPrice">0</span>)</span>
+                                </h2>
+                            </div>
+                            <div class="bg-slate-950/85 border border-slate-800 rounded-2xl px-4 py-2.5 text-left sm:text-right shrink-0">
+                                <span id="topRightLabel" class="text-[10px] uppercase tracking-wider text-slate-400 block">Your Real Time Value</span>
+                                <span id="topRightValue" class="text-lg font-extrabold text-emerald-400">₹0 / hr</span>
+                            </div>
+                        </div>
+
+                        <p id="verdictTitle" class="text-base md:text-lg font-bold text-white mb-1"></p>
+                        <p id="verdictRoast" class="text-sm md:text-base text-slate-300 leading-relaxed mb-5"></p>
+
+                        <!-- Drain Bar -->
+                        <div class="bg-slate-950/90 border border-slate-800/90 rounded-2xl p-4">
+                            <div class="flex justify-between text-xs font-bold mb-2">
+                                <span id="drainBarTitle" class="text-slate-400 uppercase tracking-wider">Monthly Salary Consumed</span>
+                                <span id="drainBarPct" class="text-indigo-300">0%</span>
+                            </div>
+                            <div class="w-full bg-slate-800 h-3 rounded-full overflow-hidden">
+                                <div id="drainBar" class="bg-gradient-to-r from-emerald-400 via-amber-400 to-rose-500 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3 Key Metrics Bento Grid -->
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div class="glass border border-slate-800 rounded-3xl p-5 text-center hover:border-indigo-500/40 transition">
+                            <span id="card1Emoji" class="text-3xl mb-2 block float-anim">⏳</span>
+                            <p id="card1Label" class="text-slate-400 text-[11px] font-bold uppercase tracking-wider">Hours of Life</p>
+                            <p id="card1Value" class="text-2xl md:text-3xl font-extrabold text-white mt-1">0 hrs</p>
+                            <p id="card1Sub" class="text-[11px] text-slate-500 mt-1">Non-refundable time</p>
+                        </div>
+
+                        <div class="glass border border-slate-800 rounded-3xl p-5 text-center hover:border-indigo-500/40 transition">
+                            <span id="card2Emoji" class="text-3xl mb-2 block float-anim">💼</span>
+                            <p id="card2Label" class="text-slate-400 text-[11px] font-bold uppercase tracking-wider">Office Shifts</p>
+                            <p id="card2Value" class="text-2xl md:text-3xl font-extrabold text-indigo-400 mt-1">0 days</p>
+                            <p id="card2Sub" class="text-[11px] text-slate-500 mt-1">Full workdays required</p>
+                        </div>
+
+                        <div class="glass border border-slate-800 rounded-3xl p-5 text-center hover:border-emerald-500/40 transition">
+                            <span class="text-3xl mb-2 block float-anim">📈</span>
+                            <p class="text-slate-400 text-[11px] font-bold uppercase tracking-wider">10-Yr SIP Value</p>
+                            <p class="text-2xl font-extrabold text-emerald-400 mt-1">₹<span id="resSip">0</span></p>
+                            <p class="text-[11px] text-slate-500 mt-1">At 12% annual return</p>
+                        </div>
+                    </div>
+
+                    <!-- Absurd Equivalents Section -->
+                    <div class="glass border border-slate-800/90 rounded-3xl p-6">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                            <h3 class="text-base md:text-lg font-extrabold text-white flex items-center gap-2">
+                                <span>🤯</span> Instead, ₹<span id="eqPriceLabel">0</span> buys you:
+                            </h3>
+                            <div class="flex flex-wrap items-center gap-2">
+                                <button type="button" onclick="fetchCalculation()" class="text-xs font-bold bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700 rounded-xl px-3 py-2 transition">
+                                    🎲 Shuffle
+                                </button>
+                                <button type="button" onclick="copyRoast()" id="copyBtn" class="text-xs font-bold bg-slate-900 hover:bg-slate-800 text-indigo-300 border border-slate-700 rounded-xl px-3.5 py-2 transition">
+                                    📋 Copy Text
+                                </button>
+                                <button type="button" onclick="openRoastModal()" class="text-xs font-extrabold bg-gradient-to-r from-pink-600 via-purple-600 to-indigo-600 hover:from-pink-500 hover:to-indigo-500 text-white rounded-xl px-4 py-2 shadow-lg shadow-purple-600/30 transition flex items-center gap-1.5">
+                                    📸 Share Roast Card
+                                </button>
+                            </div>
+                        </div>
+
+                        <div id="equivalentsGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5"></div>
+                    </div>
+
+                    <!-- Decision Helper Buttons -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <button type="button" onclick="showSavedToast()" class="glass border border-emerald-500/30 hover:border-emerald-500/60 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 font-bold py-3.5 px-4 rounded-2xl transition text-sm">
+                            🛡️ I Cancelled the Purchase!
+                        </button>
+                        <button type="button" onclick="showYoloToast()" class="glass border border-rose-500/30 hover:border-rose-500/60 bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 font-bold py-3.5 px-4 rounded-2xl transition text-sm">
+                            💸 Buying Anyway (YOLO)
+                        </button>
+                    </div>
+                    <div id="decisionToast" class="hidden text-center text-sm font-bold py-3 px-4 rounded-2xl border"></div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="mt-12 pt-6 border-t border-slate-800/60 text-center space-y-3">
+            <div class="inline-flex flex-wrap items-center justify-center gap-2 px-4 py-1.5 rounded-full bg-slate-900/90 border border-slate-800 text-xs text-slate-400 shadow-lg">
+                <span>⚡ Powered by <strong class="text-indigo-400">Python & Flask</strong></span>
+                <span class="text-slate-700">•</span>
+                <span>🎨 UI with <strong class="text-purple-400">HTML, CSS & JS</strong></span>
+            </div>
+            <p class="text-[11px] text-slate-500">
+                Protecting wallets & saving Masala Dosas one impulse at a time 🥞
+            </p>
+        </footer>
+    </div>
+
+    <!-- Shareable PNG Roast Card Modal -->
+    <div id="roastModal" class="fixed inset-0 z-50 hidden bg-black/85 backdrop-blur-md flex items-start justify-center p-3 sm:p-4 overflow-y-auto">
+        <div class="max-w-md w-full my-auto py-4 flex flex-col items-center">
+
+            <div class="w-full text-center mb-2.5 px-1 shrink-0">
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-300">🎨 Pick Card Style & Export PNG</span>
+            </div>
+
+            <!-- 3-Theme Switcher Pills -->
+            <div class="w-full grid grid-cols-3 gap-1.5 bg-slate-950 p-1.5 rounded-2xl border border-slate-800 mb-3.5 shrink-0 sticky top-2 z-30 shadow-xl">
+                <button type="button" id="themeBtnNeon" onclick="setCardTheme('neon')"
+                    class="py-2.5 px-2 rounded-xl text-xs font-extrabold transition bg-indigo-600 text-white shadow">
+                    ⚡ Neon
+                </button>
+                <button type="button" id="themeBtnReceipt" onclick="setCardTheme('receipt')"
+                    class="py-2.5 px-2 rounded-xl text-xs font-extrabold transition text-slate-400 hover:text-white">
+                    🧾 Receipt
+                </button>
+                <button type="button" id="themeBtnGold" onclick="setCardTheme('gold')"
+                    class="py-2.5 px-2 rounded-xl text-xs font-extrabold transition text-slate-400 hover:text-white">
+                    👑 Gold VIP
+                </button>
+            </div>
+
+            <!-- Capture Target Card -->
+            <div id="roastCardCanvas" class="w-full rounded-[28px] p-5 sm:p-6 relative overflow-hidden shadow-2xl text-left transition-colors duration-200 shrink-0"></div>
+
+            <!-- Action Buttons Below Card -->
+            <div class="w-full grid grid-cols-2 gap-3 mt-4 shrink-0">
+                <button id="downloadPngBtn" onclick="downloadRoastPNG()"
+                    class="bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold py-3.5 px-4 rounded-2xl shadow-lg shadow-indigo-600/30 transition text-sm flex items-center justify-center gap-2">
+                    ⬇️ Download PNG
+                </button>
+                <button id="nativeShareBtn" onclick="shareRoastPNG()"
+                    class="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold py-3.5 px-4 rounded-2xl shadow-lg shadow-emerald-600/30 transition text-sm flex items-center justify-center gap-2">
+                    📲 Share to App
+                </button>
+            </div>
+
+            <!-- Close Button Below Card -->
+            <button type="button" onclick="closeRoastModal()"
+                class="w-full mt-3 bg-slate-900/90 hover:bg-slate-800 text-slate-300 hover:text-white font-bold py-3 px-4 rounded-2xl border border-slate-700/80 transition text-sm shrink-0">
+                ✕ Close Preview
+            </button>
+        </div>
+    </div>
+
+    <!-- Linked External JavaScript from Flask's static/ folder -->
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
