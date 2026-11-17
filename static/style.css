@@ -1,0 +1,28 @@
+/* static/style.css */
+
+body {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+.font-receipt {
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.glass {
+    background: rgba(15, 23, 42, 0.72);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+}
+
+@keyframes float {
+    0%, 100% {
+        transform: translateY(0px);
+    }
+    50% {
+        transform: translateY(-6px);
+    }
+}
+
+.float-anim {
+    animation: float 3s ease-in-out infinite;
+}
