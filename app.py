@@ -263,7 +263,7 @@ def calculate():
             monthly_income = float(data.get("monthly_income", 50000))
             hours_per_day = float(data.get("hours_per_day", 8))
             days_per_week = float(data.get("days_per_week", 5))
-            print(f"Check Wallet Mode -> Item: {item_name} || Price: {item_price} || Income: {monthly_income} || Hours: {hours_per_day} || Days: {days_per_week}")
+            print(f"Check Salary Mode -> Item: {item_name} || Price: {item_price} || Income: {monthly_income} || Hours: {hours_per_day} || Days: {days_per_week}")
 
             if monthly_income <= 0 or hours_per_day <= 0 or days_per_week <= 0:
                 return jsonify({"error": "Invalid salary inputs"}), 400
