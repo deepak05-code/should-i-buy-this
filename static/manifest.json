@@ -6,6 +6,8 @@
   "background_color": "#0f172a",
   "theme_color": "#10b981",
   "orientation": "portrait",
+  "id": "56",
+  "description": "For_trial_app_deployment",
   "icons": [
     {
       "src": "/static/icon-192.png",
@@ -20,6 +22,4 @@
       "purpose": "any maskable"
     }
   ]
-"id": "56",
-"description": "For_trial_app_deployment"
 }
