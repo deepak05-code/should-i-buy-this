@@ -325,5 +325,12 @@
 
     <!-- Linked External JavaScript from Flask's static/ folder -->
     <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <script>
+       if ("serviceWorker" in navigator) {
+         window.addEventListener("load", () => {
+      navigator.serviceWorker.register("{{ url_for('static', filename='sw.js') }}");
+    });
+  }
+    </script>
 </body>
 </html>
