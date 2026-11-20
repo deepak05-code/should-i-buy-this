@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin — Should I Buy This?</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <main class="container" style="max-width: 720px; margin: 2rem auto; padding: 1rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <h2>Admin Overview</h2>
+      <a href="/">← Back to App</a>
+    </div>
+
+    <div style="display: flex; gap: 1rem; margin: 1.5rem 0;">
+      <div class="stat-card">
+        <strong>Total Users:</strong> {{ total_users }}
+      </div>
+      <div class="stat-card">
+        <strong>Total Saved Across App:</strong> ₹{{ "%.2f"|format(total_platform_saved) }}
+      </div>
+    </div>
+
+    <table class="history-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Username</th>
+          <th>Total Saved (₹)</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in users %}
+        <tr>
+          <td>{{ u.id }}</td>
+          <td>{{ u.username }}</td>
+          <td>₹{{ "%.2f"|format(u.total_saved or 0) }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </main>
+</body>
+</html>
