@@ -4,42 +4,47 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin — Should I Buy This?</title>
+  <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-<body>
-  <main class="container" style="max-width: 720px; margin: 2rem auto; padding: 1rem;">
-    <div style="display: flex; justify-content: space-between; align-items: center;">
-      <h2>Admin Overview</h2>
-      <a href="/">← Back to App</a>
+<body class="bg-slate-950 text-slate-100 min-h-screen px-4 py-8">
+  <main class="max-w-2xl mx-auto">
+    <div class="flex justify-between items-center mb-6">
+      <h1 class="text-2xl font-extrabold text-white">🛡️ Admin Overview</h1>
+      <a href="/" class="text-sm font-bold text-emerald-400 hover:text-emerald-300 transition">← Back to App</a>
     </div>
 
-    <div style="display: flex; gap: 1rem; margin: 1.5rem 0;">
-      <div class="stat-card">
-        <strong>Total Users:</strong> {{ total_users }}
+    <div class="grid grid-cols-2 gap-4 mb-6">
+      <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4">
+        <p class="text-xs uppercase tracking-wider text-slate-400 font-bold">Total Users</p>
+        <p class="text-2xl font-extrabold text-white mt-1">{{ total_users }}</p>
       </div>
-      <div class="stat-card">
-        <strong>Total Saved Across App:</strong> ₹{{ "%.2f"|format(total_platform_saved) }}
+      <div class="bg-slate-900/90 border border-emerald-500/30 rounded-2xl p-4">
+        <p class="text-xs uppercase tracking-wider text-emerald-400 font-bold">Total Saved</p>
+        <p class="text-2xl font-extrabold text-emerald-300 mt-1">₹{{ "{:,.2f}".format(total_platform_saved) }}</p>
       </div>
     </div>
 
-    <table class="history-table">
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Username</th>
-          <th>Total Saved (₹)</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for u in users %}
-        <tr>
-          <td>{{ u.id }}</td>
-          <td>{{ u.username }}</td>
-          <td>₹{{ "%.2f"|format(u.total_saved or 0) }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+    <div class="bg-slate-900/90 border border-slate-800 rounded-2xl overflow-hidden">
+      <table class="w-full text-left border-collapse">
+        <thead>
+          <tr class="border-b border-slate-800 text-xs uppercase text-slate-400">
+            <th class="py-3 px-4">ID</th>
+            <th class="py-3 px-4">Username</th>
+            <th class="py-3 px-4 text-right">Total Saved</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-800/70 text-sm">
+          {% for u in users %}
+          <tr>
+            <td class="py-3 px-4 text-slate-400">{{ u.id }}</td>
+            <td class="py-3 px-4 font-semibold text-white">{{ u.username }}</td>
+            <td class="py-3 px-4 text-right font-bold text-emerald-400">₹{{ "{:,.2f}".format(u.total_saved or 0) }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
   </main>
 </body>
 </html>
