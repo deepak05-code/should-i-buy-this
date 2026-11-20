@@ -1,6 +1,6 @@
 import os
 import random
-from flask import Flask, render_template, request, jsonify, redirect, url_for, flash
+from flask import Flask, render_template, request, jsonify, redirect, url_for, flash, abort
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -133,6 +133,25 @@ def get_wallet_verdict(wallet_pct):
 @app.route("/")
 def index():
     return render_template("index.html")
+
+ADMIN_ID = 4
+
+@app.route("/admin")
+@login_required
+def admin_dashboard():
+    if current_user.username != ADMIN_ID:
+        abort(403)  # Blocks every other user with 403 Forbidden
+
+    users = User.query.order_by(User.id.asc()).all()
+    total_users = len(users)
+    total_platform_saved = sum((u.total_saved or 0) for u in users)
+
+    return render_template(
+        "admin.html",
+        users=users,
+        total_users=total_users,
+        total_platform_saved=total_platform_saved,
+    )
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
