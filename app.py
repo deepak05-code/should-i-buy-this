@@ -130,16 +130,17 @@ def get_wallet_verdict(wallet_pct):
 # ==========================================
 # ROUTES (AUTH + MAIN APP)
 # ==========================================
+ADMIN_ID = 4
+
 @app.route("/")
 def index():
-    return render_template("index.html")
-
-ADMIN_ID = 4
+    is_admin = current_user.is_authenticated and current_user.id == ADMIN_ID
+    return render_template("index.html", is_admin=is_admin)
 
 @app.route("/admin")
 @login_required
 def admin_dashboard():
-    if current_user.username != ADMIN_ID:
+    if current_user.id != ADMIN_ID:
         abort(403)  # Blocks every other user with 403 Forbidden
 
     users = User.query.order_by(User.id.asc()).all()
