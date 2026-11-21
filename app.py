@@ -154,6 +154,21 @@ def admin_dashboard():
         total_platform_saved=total_platform_saved,
     )
 
+@app.route("/admin/delete/<int:user_id>", methods=["POST"])
+@login_required
+def admin_delete_user(user_id):
+    if current_user.id != ADMIN_ID:
+        abort(403)
+
+    if user_id == ADMIN_ID:
+        return redirect(url_for("admin_dashboard"))  # Prevents deleting your own admin account
+
+    user_to_delete = User.query.get_or_404(user_id)
+    db.session.delete(user_to_delete)
+    db.session.commit()
+
+    return redirect(url_for("admin_dashboard"))
+
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if current_user.is_authenticated:
