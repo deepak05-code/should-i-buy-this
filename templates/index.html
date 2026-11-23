@@ -179,6 +179,9 @@
 
                 <!-- Live Flask Results Container -->
                 <div id="resultsContainer" class="hidden space-y-6">
+                   {% if current_user.is_authenticated %}
+                      <section id="private-history" class="mt-10 space-y-6"></section>
+                  {% endif %}
 
                     <!-- Dynamic Verdict Banner -->
                     <div id="verdictCard" class="glass border-2 border-amber-500/40 rounded-3xl p-6 md:p-7 shadow-2xl transition-all duration-300">
