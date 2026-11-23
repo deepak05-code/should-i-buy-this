@@ -4,6 +4,9 @@ from flask import Flask, render_template, request, jsonify, redirect, url_for, f
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
+from datetime import datetime, timezone,timedelta
+
+IST = timezone(timedelta(hours=5, minutes=30))
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-secret-key-change-in-prod")
@@ -32,6 +35,28 @@ class User(UserMixin, db.Model):
     username = db.Column(db.String(80), unique=True, nullable=False)
     password_hash = db.Column(db.String(256), nullable=False)
     total_saved = db.Column(db.Float, default=0.0)
+
+class SalaryCheck(db.Model):
+    __tablename__ = "salary_checks"
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id", ondelete="CASCADE"), nullable=False, index=True)
+    item_name = db.Column(db.String(120), nullable=False)
+    item_price = db.Column(db.Float, nullable=False)
+    monthly_income = db.Column(db.Float, nullable=False)
+    hours_per_day = db.Column(db.Float, nullable=False)
+    days_per_week = db.Column(db.Float, nullable=False)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+
+
+class WalletCheck(db.Model):
+    __tablename__ = "wallet_checks"
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id", ondelete="CASCADE"), nullable=False, index=True)
+    item_name = db.Column(db.String(120), nullable=False)
+    item_price = db.Column(db.Float, nullable=False)
+    daily_spend = db.Column(db.Float, nullable=False)
+    wallet_balance = db.Column(db.Float, nullable=False)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
 
 with app.app_context():
     db.create_all()
@@ -266,6 +291,16 @@ def calculate():
             remaining = wallet_balance - item_price
             survival_days = round(item_price / daily_spend, 1)
             rem_str = f"₹{int(round(remaining)):,}" if remaining >= 0 else f"-₹{int(round(abs(remaining))):,}"
+            
+            if current_user.is_authenticated:
+              db.session.add(WalletCheck(
+                user_id=current_user.id,
+                item_name=item_name[:120],
+                item_price=item_price,
+                daily_spend=daily_spend,
+                wallet_balance=wallet_balance,
+              ))
+              db.session.commit()
 
             return jsonify({
                 "mode": "wallet",
@@ -309,6 +344,17 @@ def calculate():
             work_days = round(hours_of_life / hours_per_day, 1)
             income_percentage = round((item_price / monthly_income) * 100, 1)
 
+            if current_user.is_authenticated:
+              db.session.add(SalaryCheck(
+                user_id=current_user.id,
+                item_name=item_name[:120],
+                item_price=item_price,
+                monthly_income=monthly_income,
+                hours_per_day=hours_per_day,
+                days_per_week=days_per_week,
+              ))
+              db.session.commit()
+
             return jsonify({
                 "mode": "salary",
                 "item_name": item_name,
@@ -338,6 +384,68 @@ def calculate():
 
     except (ValueError, TypeError):
         return jsonify({"error": "Calculation error"}), 400
+
+@app.route("/api/history/mine", methods=["GET"])
+@login_required
+def get_my_history():
+    salary_rows = (
+        SalaryCheck.query.filter_by(user_id=current_user.id)
+        .order_by(SalaryCheck.created_at.desc())
+        .limit(100)
+        .all()
+    )
+    wallet_rows = (
+        WalletCheck.query.filter_by(user_id=current_user.id)
+        .order_by(WalletCheck.created_at.desc())
+        .limit(100)
+        .all()
+    )
+    return jsonify({
+        "salary_history": [
+            {
+                "id": r.id,
+                "item_name": r.item_name,
+                "item_price": r.item_price,
+                "monthly_income": r.monthly_income,
+                "hours_per_day": r.hours_per_day,
+                "days_per_week": r.days_per_week,
+                "created_at": r.created_at.replace(tzinfo=timezone.utc).astimezone(IST).strftime("%d %b, %I:%M %p"),
+            }
+            for r in salary_rows
+        ],
+        "wallet_history": [
+            {
+                "id": r.id,
+                "item_name": r.item_name,
+                "item_price": r.item_price,
+                "daily_spend": r.daily_spend,
+                "wallet_balance": r.wallet_balance,
+                "created_at": r.created_at.replace(tzinfo=timezone.utc).astimezone(IST).strftime("%d %b, %I:%M %p"),
+            }
+            for r in wallet_rows
+        ],
+    })
+
+@app.route("/api/history/delete/<mode>/<int:entry_id>", methods=["DELETE"])
+@login_required
+def delete_single_history(mode, entry_id):
+    model = SalaryCheck if mode == "salary" else WalletCheck
+    entry = model.query.filter_by(id=entry_id, user_id=current_user.id).first()
+    if not entry:
+        return jsonify({"error": "Not found"}), 404
+    db.session.delete(entry)
+    db.session.commit()
+    return jsonify({"status": "deleted"})
+
+
+@app.route("/api/history/clear/<mode>", methods=["DELETE"])
+@login_required
+def clear_mode_history(mode):
+    model = SalaryCheck if mode == "salary" else WalletCheck
+    model.query.filter_by(user_id=current_user.id).delete()
+    db.session.commit()
+    return jsonify({"status": "cleared"})
+
 
 if __name__ == "__main__":
     app.run(port=5000)
