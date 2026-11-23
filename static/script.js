@@ -84,10 +84,142 @@ async function fetchCalculation() {
         document.getElementById('decisionToast').className = 'hidden';
 
         renderUI(data);
+        loadMyHistory();
     } catch (err) {
         btn.innerText = "Give Me A Reality Check ⚡";
         console.error("Error communicating with Flask:", err);
     }
+}
+
+async function loadMyHistory() {
+  const container = document.getElementById("private-history");
+  if (!container) return;
+
+  try {
+    const res = await fetch("/api/history/mine");
+    if (!res.ok) return;
+    const data = await res.json();
+
+    container.innerHTML = `
+      <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-sm font-extrabold uppercase tracking-wider text-indigo-400">
+            💼 My Salary Mode History
+          </h3>
+          ${
+            data.salary_history.length
+              ? `<button onclick="clearHistory('salary')" class="text-xs font-bold text-rose-400 hover:text-rose-300 transition">Clear</button>`
+              : ""
+          }
+        </div>
+        ${
+          data.salary_history.length
+            ? `<div class="max-h-64 overflow-y-auto overflow-x-auto pr-1">
+                <table class="w-full text-left text-xs">
+                  <thead class="sticky top-0 bg-slate-900 z-10">
+                    <tr class="border-b border-slate-800 text-slate-400">
+                      <th class="py-2 pr-3">Item</th>
+                      <th class="py-2 pr-3">Price</th>
+                      <th class="py-2 pr-3">Income</th>
+                      <th class="py-2 pr-3">Schedule</th>
+                      <th class="py-2 pr-2 text-right">Date</th>
+                      <th class="py-2 text-right">Clear</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-slate-800/70">
+                    ${data.salary_history
+                      .map(
+                        (r) => `
+                      <tr>
+                        <td class="py-2.5 pr-3 font-semibold text-white">${r.item_name}</td>
+                        <td class="py-2.5 pr-3 text-slate-300">₹${r.item_price.toLocaleString("en-IN")}</td>
+                        <td class="py-2.5 pr-3 text-indigo-300">₹${r.monthly_income.toLocaleString("en-IN")}</td>
+                        <td class="py-2.5 pr-3 text-slate-400">${r.hours_per_day}h × ${r.days_per_week}d</td>
+                        <td class="py-2.5 pr-2 text-right text-slate-500">${r.created_at}</td>
+                        <td class="py-2.5 text-right">
+                          <button onclick="deleteHistoryItem('salary', ${r.id})" class="text-slate-500 hover:text-rose-400 font-bold px-1">✕</button>
+                        </td>
+                      </tr>`
+                      )
+                      .join("")}
+                  </tbody>
+                </table>
+              </div>`
+            : `<p class="text-xs text-slate-500">No Salary Mode checks saved yet.</p>`
+        }
+      </div>
+
+      <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-sm font-extrabold uppercase tracking-wider text-amber-400">
+            👛 My Wallet Mode History
+          </h3>
+          ${
+            data.wallet_history.length
+              ? `<button onclick="clearHistory('wallet')" class="text-xs font-bold text-rose-400 hover:text-rose-300 transition">Clear</button>`
+              : ""
+          }
+        </div>
+        ${
+          data.wallet_history.length
+            ? `<div class="max-h-64 overflow-y-auto overflow-x-auto pr-1">
+                <table class="w-full text-left text-xs">
+                  <thead class="sticky top-0 bg-slate-900 z-10">
+                    <tr class="border-b border-slate-800 text-slate-400">
+                      <th class="py-2 pr-3">Item</th>
+                      <th class="py-2 pr-3">Price</th>
+                      <th class="py-2 pr-3">Daily Spend</th>
+                      <th class="py-2 pr-3">Balance</th>
+                      <th class="py-2 pr-2 text-right">Date</th>
+                      <th class="py-2 text-right">Clear</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-slate-800/70">
+                    ${data.wallet_history
+                      .map(
+                        (r) => `
+                      <tr>
+                        <td class="py-2.5 pr-3 font-semibold text-white">${r.item_name}</td>
+                        <td class="py-2.5 pr-3 text-slate-300">₹${r.item_price.toLocaleString("en-IN")}</td>
+                        <td class="py-2.5 pr-3 text-amber-300">₹${r.daily_spend.toLocaleString("en-IN")}</td>
+                        <td class="py-2.5 pr-3 text-slate-300">₹${r.wallet_balance.toLocaleString("en-IN")}</td>
+                        <td class="py-2.5 pr-2 text-right text-slate-500">${r.created_at}</td>
+                        <td class="py-2.5 text-right">
+                          <button onclick="deleteHistoryItem('wallet', ${r.id})" class="text-slate-500 hover:text-rose-400 font-bold px-1">✕</button>
+                        </td>
+                      </tr>`
+                      )
+                      .join("")}
+                  </tbody>
+                </table>
+              </div>`
+            : `<p class="text-xs text-slate-500">No Wallet Mode checks saved yet.</p>`
+        }
+      </div>
+    `;
+  } catch (err) {
+    console.error("Failed to load history:", err);
+  }
+}
+
+
+async function deleteHistoryItem(mode, id) {
+  try {
+    const res = await fetch(`/api/history/delete/${mode}/${id}`, { method: "DELETE" });
+    if (res.ok) loadMyHistory();
+  } catch (err) {
+    console.error("Delete failed:", err);
+  }
+}
+
+async function clearHistory(mode) {
+  if (!confirm(`Clear all ${mode === "salary" ? "Salary" : "Wallet"} Mode history?`)) return;
+  try {
+    const res = await fetch(`/api/history/clear/${mode}`, { method: "DELETE" });
+    if (res.ok) loadMyHistory();
+  } catch (err) {
+    console.error("Clear failed:", err);
+  }
 }
 
 function renderUI(data) {
