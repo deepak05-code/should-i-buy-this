@@ -608,3 +608,44 @@ function showYoloToast() {
     toast.className = "block text-center text-sm font-bold py-3.5 px-4 rounded-2xl bg-rose-500/20 border border-rose-500/40 text-rose-300";
     toast.innerText = `💀 Enjoy your ${latestData.item_name}! Just remember it cost you ${latestData.comparisons[0].qty} ${latestData.comparisons[0].name}.`;
 }
+
+function handleIncomingShare() {
+  const params = new URLSearchParams(window.location.search);
+  const sharedTitle = params.get("title") || "";
+  const sharedText = params.get("text") || "";
+  const combined = `${sharedTitle} ${sharedText}`.trim();
+
+  if (!combined) return;
+
+  // Extract price (matches ₹1,999 / Rs. 1999 / INR 1,999.00)
+  const priceMatch = combined.match(/(?:₹|Rs\.?|INR)\s*([\d,]+(?:\.\d{1,2})?)/i);
+  if (priceMatch) {
+    const cleanPrice = Math.round(parseFloat(priceMatch[1].replace(/,/g, "")));
+    if (cleanPrice > 0) {
+      document.getElementById("item_price").value = cleanPrice;
+    }
+  }
+
+  // Strip URLs, price tags, and filler text to isolate the product name
+  let cleanName = combined
+    .replace(/https?:\/\/\S+/g, "")
+    .replace(/(?:₹|Rs\.?|INR)\s*[\d,]+(?:\.\d{1,2})?/gi, "")
+    .replace(/^(Check this out!|Take a look at this|Deal of the day:)\s*/i, "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (cleanName) {
+    document.getElementById("item_name").value = cleanName.slice(0, 60);
+  }
+
+  // Clean the URL bar so refreshing doesn't re-trigger the share
+  window.history.replaceState({}, document.title, "/");
+
+  // Auto-run reality check if a price was captured
+  if (document.getElementById("item_price").value) {
+    fetchCalculation();
+  }
+}
+
+document.addEventListener("DOMContentLoaded", handleIncomingShare);
+
