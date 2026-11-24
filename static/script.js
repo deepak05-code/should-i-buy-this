@@ -617,35 +617,38 @@ function handleIncomingShare() {
 
   if (!combined) return;
 
-  // Extract price (matches ₹1,999 / Rs. 1999 / INR 1,999.00)
+  const priceInput = document.getElementById("item_price");
+  const nameInput = document.getElementById("item_name");
+
+  // 1. Extract price if present (Flipkart/Myntra/Zomato often include ₹)
   const priceMatch = combined.match(/(?:₹|Rs\.?|INR)\s*([\d,]+(?:\.\d{1,2})?)/i);
   if (priceMatch) {
     const cleanPrice = Math.round(parseFloat(priceMatch[1].replace(/,/g, "")));
     if (cleanPrice > 0) {
-      document.getElementById("item_price").value = cleanPrice;
+      priceInput.value = cleanPrice;
     }
   }
 
-  // Strip URLs, price tags, and filler text to isolate the product name
+  // 2. Strip URLs, price tags, and Amazon/Flipkart boilerplate prefixes
   let cleanName = combined
     .replace(/https?:\/\/\S+/g, "")
     .replace(/(?:₹|Rs\.?|INR)\s*[\d,]+(?:\.\d{1,2})?/gi, "")
-    .replace(/^(Check this out!|Take a look at this|Deal of the day:)\s*/i, "")
+    .replace(/^(Check this out at Amazon|Check this out!?|Take a look at this|Deal of the day:)\s*/i, "")
     .replace(/\s+/g, " ")
     .trim();
 
   if (cleanName) {
-    document.getElementById("item_name").value = cleanName.slice(0, 60);
+    nameInput.value = cleanName.slice(0, 60);
   }
 
-  // Clean the URL bar so refreshing doesn't re-trigger the share
+  // Clean the URL bar
   window.history.replaceState({}, document.title, "/");
 
-  // Auto-run reality check if a price was captured
-  if (document.getElementById("item_price").value) {
+  // 3. Auto-calculate if price was found, otherwise focus price box for quick entry
+  if (priceInput.value) {
     fetchCalculation();
+  } else {
+    priceInput.focus();
   }
 }
-
 document.addEventListener("DOMContentLoaded", handleIncomingShare);
-
